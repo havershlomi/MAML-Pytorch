@@ -56,11 +56,11 @@ def main():
     ]
 
     device = torch.device('mps')
-    print(device)
+
     maml = Meta(args, config).to(device)
-    model_path = './maml_2_epoch-60000-n_way-5-k_spt-1-k_qry-15-imgsz-84-imgc-3-task_num-4-meta_lr-0.001-update_lr-0.01-update_step-5-update_step_test-10.pt'
-    maml = Meta(args, config).to(device)
-    maml.load_state_dict(torch.load(model_path))
+    # model_path = './maml_2_epoch-60000-n_way-5-k_spt-1-k_qry-15-imgsz-84-imgc-3-task_num-4-meta_lr-0.001-update_lr-0.01-update_step-5-update_step_test-10.pt'
+    # maml = Meta(args, config).to(device)
+    # maml.load_state_dict(torch.load(model_path))
     tmp = filter(lambda x: x.requires_grad, maml.parameters())
     num = sum(map(lambda x: np.prod(x.shape), tmp))
 
