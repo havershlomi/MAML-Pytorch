@@ -28,7 +28,7 @@ class MAML(nn.Module):
 
 
 def main():
-    device = torch.device('cuda')
+    device = torch.device('mps')
     maml = MAML().to(device)
     print(maml.net.a)
     print(maml.net.b0)
