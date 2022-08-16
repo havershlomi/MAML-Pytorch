@@ -23,7 +23,7 @@ class MiniImagenet(Dataset):
     """
 
     def __init__(self, root, mode, batchsz, n_way, k_shot, k_query, resize, startidx=0):
-        """
+        """conda install -c conda-forge pillow
 
         :param root: root path of mini-imagenet
         :param mode: train, val or test
@@ -40,25 +40,28 @@ class MiniImagenet(Dataset):
         self.k_shot = k_shot  # k-shot
         self.k_query = k_query  # for evaluation
         self.setsz = self.n_way * self.k_shot  # num of samples per set
-        self.querysz = self.n_way * self.k_query  # number of samples per set for evaluation
+        # number of samples per set for evaluation
+        self.querysz = self.n_way * self.k_query
         self.resize = resize  # resize to
         self.startidx = startidx  # index label not from 0, but from startidx
         print('shuffle DB :%s, b:%d, %d-way, %d-shot, %d-query, resize:%d' % (
-        mode, batchsz, n_way, k_shot, k_query, resize))
+            mode, batchsz, n_way, k_shot, k_query, resize))
 
         if mode == 'train':
-            self.transform = transforms.Compose([lambda x: Image.open(x).convert('RGB'),
-                                                 transforms.Resize((self.resize, self.resize)),
-                                                 # transforms.RandomHorizontalFlip(),
-                                                 # transforms.RandomRotation(5),
-                                                 transforms.ToTensor(),
-                                                 transforms.Normalize((0.485, 0.456, 0.406), (0.229, 0.224, 0.225))
-                                                 ])
+            self.transform = transforms.Compose([imageTransform(), transforms.Resize(
+                (self.resize, self.resize)),
+                # transforms.RandomHorizontalFlip(),
+                # transforms.RandomRotation(5),
+                transforms.ToTensor(),
+                transforms.Normalize(
+                (0.485, 0.456, 0.406), (0.229, 0.224, 0.225))])
         else:
-            self.transform = transforms.Compose([lambda x: Image.open(x).convert('RGB'),
-                                                 transforms.Resize((self.resize, self.resize)),
+            self.transform = transforms.Compose([imageTransform(),
+                                                 transforms.Resize(
+                                                     (self.resize, self.resize)),
                                                  transforms.ToTensor(),
-                                                 transforms.Normalize((0.485, 0.456, 0.406), (0.229, 0.224, 0.225))
+                                                 transforms.Normalize(
+                                                     (0.485, 0.456, 0.406), (0.229, 0.224, 0.225))
                                                  ])
 
         self.path = os.path.join(root, 'images')  # image path
@@ -103,16 +106,20 @@ class MiniImagenet(Dataset):
         self.query_x_batch = []  # query set batch
         for b in range(batchsz):  # for each batch
             # 1.select n_way classes randomly
-            selected_cls = np.random.choice(self.cls_num, self.n_way, False)  # no duplicate
+            selected_cls = np.random.choice(
+                self.cls_num, self.n_way, False)  # no duplicate
             np.random.shuffle(selected_cls)
             support_x = []
             query_x = []
             for cls in selected_cls:
                 # 2. select k_shot + k_query for each class
-                selected_imgs_idx = np.random.choice(len(self.data[cls]), self.k_shot + self.k_query, False)
+                selected_imgs_idx = np.random.choice(
+                    len(self.data[cls]), self.k_shot + self.k_query, False)
                 np.random.shuffle(selected_imgs_idx)
-                indexDtrain = np.array(selected_imgs_idx[:self.k_shot])  # idx for Dtrain
-                indexDtest = np.array(selected_imgs_idx[self.k_shot:])  # idx for Dtest
+                indexDtrain = np.array(
+                    selected_imgs_idx[:self.k_shot])  # idx for Dtrain
+                indexDtest = np.array(
+                    selected_imgs_idx[self.k_shot:])  # idx for Dtest
                 support_x.append(
                     np.array(self.data[cls])[indexDtrain].tolist())  # get all images filename for current Dtrain
                 query_x.append(np.array(self.data[cls])[indexDtest].tolist())
@@ -121,7 +128,8 @@ class MiniImagenet(Dataset):
             random.shuffle(support_x)
             random.shuffle(query_x)
 
-            self.support_x_batch.append(support_x)  # append set to current sets
+            # append set to current sets
+            self.support_x_batch.append(support_x)
             self.query_x_batch.append(query_x)  # append sets to current sets
 
     def __getitem__(self, index):
@@ -190,7 +198,8 @@ if __name__ == '__main__':
     plt.ion()
 
     tb = SummaryWriter('runs', 'mini-imagenet')
-    mini = MiniImagenet('../mini-imagenet/', mode='train', n_way=5, k_shot=1, k_query=1, batchsz=1000, resize=168)
+    mini = MiniImagenet('../mini-imagenet/', mode='train',
+                        n_way=5, k_shot=1, k_query=1, batchsz=1000, resize=168)
 
     for i, set_ in enumerate(mini):
         # support_x: [k_shot*n_way, 3, 84, 84]
@@ -212,3 +221,19 @@ if __name__ == '__main__':
         time.sleep(5)
 
     tb.close()
+
+
+class imageTransform(object):
+    def __call__(self, img):
+        """
+        :param img: (PIL): Image 
+
+        :return: ycbr color space image (PIL)
+        """
+        return Image.open(img).convert('RGB')
+        t = torch.from_numpy(img)
+
+        return Image.fromarray(t)
+
+    def __repr__(self):
+        return self.__class__.__name__+'()'
