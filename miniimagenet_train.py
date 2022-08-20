@@ -54,8 +54,14 @@ def main():
         ('flatten', []),
         ('linear', [args.n_way, 32 * 5 * 5])
     ]
+    device = torch.device('cpu')
 
-    device = torch.device('mps')
+    if torch.backends.mps.is_available() and torch.backends.mps.is_built():
+        device = torch.device('mps')
+    elif torch.cuda.device_count():
+        device = torch.device('cuda')
+
+    print("device", device)
 
     maml = Meta(args, config).to(device)
     # model_path = './maml_2_epoch-60000-n_way-5-k_spt-1-k_qry-15-imgsz-84-imgc-3-task_num-4-meta_lr-0.001-update_lr-0.01-update_step-5-update_step_test-10.pt'
